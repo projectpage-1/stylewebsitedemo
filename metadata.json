@@ -1,0 +1,6 @@
+{
+  "name": "STYLE ZONE",
+  "description": "Professional fashion e-commerce marketplace featuring dual Normal and Premium shopping experiences, category filtering, cart, wishlist, multi-step checkout to Proceed to Pay, and comprehensive admin controls.",
+  "requestFramePermissions": ["geolocation"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
