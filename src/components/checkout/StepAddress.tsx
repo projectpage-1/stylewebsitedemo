@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useCheckout } from '../../context/CheckoutContext';
 import { useAuth } from '../../context/AuthContext';
 import { useStore } from '../../context/StoreContext';
+import { useLocation } from '../../context/LocationContext';
 import { Address } from '../../types/user';
 import { Button } from '../common/Button';
 import { Modal } from '../common/Modal';
@@ -17,6 +18,7 @@ import {
   AlertCircle,
   ShieldCheck,
   Crosshair,
+  Compass,
 } from 'lucide-react';
 
 /**
@@ -98,11 +100,39 @@ export const StepAddress: React.FC = () => {
   const { selectedAddress, setSelectedAddress, nextStep, prevStep } = useCheckout();
   const { user, addAddress, deleteAddress } = useAuth();
   const { isPremium } = useStore();
+  const { selectedLocation, openLocationModal } = useLocation();
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isLocating, setIsLocating] = useState(false);
   const [geoCoords, setGeoCoords] = useState<{ lat: number; lng: number } | null>(null);
   const [geoVerified, setGeoVerified] = useState(false);
+
+  // Sync selectedLocation into selectedAddress when user confirms a live location
+  const handleSelectLiveLocationAsAddress = () => {
+    const liveAddr: Address = {
+      id: `live_loc_${Date.now()}`,
+      name: user?.fullName || 'Alexander Wright',
+      phone: user?.phone || '9876543210',
+      street: [
+        selectedLocation.houseNo,
+        selectedLocation.area,
+        selectedLocation.landmark,
+      ]
+        .filter(Boolean)
+        .join(', ') || selectedLocation.formattedAddress,
+      city: selectedLocation.city,
+      state: selectedLocation.state,
+      pincode: selectedLocation.pincode,
+      postalCode: selectedLocation.pincode,
+      lat: selectedLocation.lat,
+      lng: selectedLocation.lng,
+      houseNo: selectedLocation.houseNo,
+      landmark: selectedLocation.landmark,
+      type: selectedLocation.tag || 'home',
+      isDefault: true,
+    };
+    setSelectedAddress(liveAddr);
+  };
 
   const [newAddr, setNewAddr] = useState({
     name: user?.fullName || 'Alexander Wright',
@@ -311,6 +341,77 @@ export const StepAddress: React.FC = () => {
         </Button>
       </div>
 
+      {/* Live Location Map Selector Banner - Exactly like Blinkit / Swiggy / Zepto */}
+      <div
+        className={`p-4 rounded-3xl border transition-all flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 ${
+          isPremium
+            ? 'bg-gradient-to-r from-[#D4AF37]/15 via-[#181822] to-[#121217] border-[#D4AF37]/40 shadow-lg shadow-black/40'
+            : 'bg-gradient-to-r from-rose-50/80 via-white to-amber-50/30 border-rose-200 shadow-xs'
+        }`}
+      >
+        <div className="flex items-center gap-3">
+          <div className="relative flex items-center justify-center shrink-0">
+            <div
+              className={`w-11 h-11 rounded-2xl flex items-center justify-center ${
+                isPremium ? 'bg-[#D4AF37] text-black shadow-md' : 'bg-rose-600 text-white shadow-md'
+              }`}
+            >
+              <Crosshair className="w-6 h-6" />
+            </div>
+            <span
+              className={`absolute -inset-1 rounded-2xl animate-ping opacity-30 ${
+                isPremium ? 'bg-[#D4AF37]' : 'bg-rose-500'
+              }`}
+            />
+          </div>
+
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-bold text-zinc-900 dark:text-zinc-100">
+                Select Live Location on Map
+              </span>
+              <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-600 dark:text-emerald-400">
+                Live GPS
+              </span>
+            </div>
+            <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
+              Current Pin:{' '}
+              <strong className="text-zinc-800 dark:text-zinc-200">
+                {selectedLocation.area}, {selectedLocation.city} ({selectedLocation.pincode})
+              </strong>
+            </p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2 w-full sm:w-auto">
+          <button
+            type="button"
+            onClick={openLocationModal}
+            className={`flex-1 sm:flex-none px-3.5 py-2 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+              isPremium
+                ? 'bg-zinc-800 text-zinc-200 border border-zinc-700 hover:border-zinc-500'
+                : 'bg-white text-zinc-700 border border-zinc-300 hover:bg-zinc-50'
+            }`}
+          >
+            <Compass className="w-3.5 h-3.5 text-blue-500" />
+            <span>Open Map</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={handleSelectLiveLocationAsAddress}
+            className={`flex-1 sm:flex-none px-4 py-2 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 shadow-xs transition-all cursor-pointer ${
+              isPremium
+                ? 'bg-[#D4AF37] text-black hover:bg-[#C5A059]'
+                : 'bg-zinc-900 text-white hover:bg-zinc-800'
+            }`}
+          >
+            <Check className="w-3.5 h-3.5" />
+            <span>Deliver to This Live Pin</span>
+          </button>
+        </div>
+      </div>
+
       {/* Address List */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {addresses.map((addr) => {
@@ -421,28 +522,46 @@ export const StepAddress: React.FC = () => {
                 </p>
               </div>
 
-              <button
-                type="button"
-                onClick={handleDetectLiveLocation}
-                disabled={isLocating}
-                className={`px-3.5 py-2 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer shrink-0 ${
-                  isPremium
-                    ? 'bg-[#D4AF37]/20 text-[#F3E5AB] border border-[#D4AF37]/40 hover:bg-[#D4AF37]/30'
-                    : 'bg-blue-600 text-white hover:bg-blue-700 shadow-xs'
-                }`}
-              >
-                {isLocating ? (
-                  <>
-                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                    <span>Detecting GPS...</span>
-                  </>
-                ) : (
-                  <>
-                    <Crosshair className="w-3.5 h-3.5" />
-                    <span>Use My Current Location</span>
-                  </>
-                )}
-              </button>
+              <div className="flex items-center gap-2 shrink-0">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsModalOpen(false);
+                    openLocationModal();
+                  }}
+                  className={`px-3 py-2 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                    isPremium
+                      ? 'bg-zinc-800 text-zinc-200 border border-zinc-700 hover:border-zinc-500'
+                      : 'bg-zinc-100 text-zinc-700 border border-zinc-300 hover:bg-zinc-200'
+                  }`}
+                >
+                  <Compass className="w-3.5 h-3.5 text-rose-500" />
+                  <span>Pick on Live Map</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleDetectLiveLocation}
+                  disabled={isLocating}
+                  className={`px-3.5 py-2 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                    isPremium
+                      ? 'bg-[#D4AF37]/20 text-[#F3E5AB] border border-[#D4AF37]/40 hover:bg-[#D4AF37]/30'
+                      : 'bg-blue-600 text-white hover:bg-blue-700 shadow-xs'
+                  }`}
+                >
+                  {isLocating ? (
+                    <>
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      <span>Detecting GPS...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Crosshair className="w-3.5 h-3.5" />
+                      <span>Use GPS</span>
+                    </>
+                  )}
+                </button>
+              </div>
             </div>
 
             {/* Visual GPS Verification Badge */}

@@ -3,6 +3,7 @@ import { useStore } from '../../context/StoreContext';
 import { useCart } from '../../context/CartContext';
 import { useWishlist } from '../../context/WishlistContext';
 import { useAuth } from '../../context/AuthContext';
+import { useLocation } from '../../context/LocationContext';
 import { StoreSwitcher } from './StoreSwitcher';
 import { SearchSuggestions } from './SearchSuggestions';
 import { Product } from '../../types/product';
@@ -17,6 +18,9 @@ import {
   LogOut,
   SlidersHorizontal,
   Gift,
+  MapPin,
+  ChevronDown,
+  ChevronRight,
 } from 'lucide-react';
 
 interface HeaderProps {
@@ -36,6 +40,7 @@ export const Header: React.FC<HeaderProps> = ({
   const { itemCount: cartCount } = useCart();
   const { itemCount: wishlistCount } = useWishlist();
   const { user, isAuthenticated, logout, login } = useAuth();
+  const { selectedLocation, openLocationModal } = useLocation();
 
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearchSuggestionsOpen, setIsSearchSuggestionsOpen] = useState(false);
@@ -162,6 +167,44 @@ export const Header: React.FC<HeaderProps> = ({
                 <StoreSwitcher />
               </div>
             )}
+
+            {/* Delivery Location Selector - Like Swiggy, Blinkit, Flipkart, Amazon */}
+            <button
+              type="button"
+              onClick={openLocationModal}
+              className={`hidden lg:flex items-center gap-2 px-3 py-1.5 rounded-2xl border transition-all cursor-pointer group text-left ${
+                isPremium
+                  ? 'bg-[#181822] border-[#2E2E3E] hover:border-[#D4AF37]/60 text-zinc-300'
+                  : 'bg-zinc-50 border-zinc-200 hover:border-zinc-300 text-zinc-700'
+              }`}
+              title="Change delivery location on live map"
+            >
+              <div
+                className={`w-7 h-7 rounded-xl flex items-center justify-center shrink-0 ${
+                  isPremium ? 'bg-[#D4AF37]/20 text-[#D4AF37]' : 'bg-rose-100 text-rose-600'
+                }`}
+              >
+                <MapPin className="w-3.5 h-3.5" />
+              </div>
+              <div className="flex flex-col min-w-0 pr-1">
+                <span className="text-[10px] uppercase font-bold tracking-wider text-zinc-400 leading-none">
+                  Deliver to
+                </span>
+                <div className="flex items-center gap-1 mt-0.5">
+                  <span
+                    className={`text-xs font-bold truncate max-w-[110px] xl:max-w-[150px] ${
+                      isPremium ? 'text-zinc-100' : 'text-zinc-900'
+                    }`}
+                  >
+                    {selectedLocation.area}
+                  </span>
+                  <span className="text-[10px] font-mono text-zinc-400">
+                    {selectedLocation.pincode}
+                  </span>
+                  <ChevronDown className="w-3 h-3 text-zinc-400 group-hover:translate-y-0.5 transition-transform shrink-0" />
+                </div>
+              </div>
+            </button>
           </div>
 
           {/* Real Search Bar with Live Suggestions */}
@@ -359,8 +402,46 @@ export const Header: React.FC<HeaderProps> = ({
           </div>
         </div>
 
+        {/* Mobile Location Selector Bar - Tap to choose live GPS location like Blinkit/Swiggy */}
+        <div
+          onClick={openLocationModal}
+          className={`lg:hidden px-4 py-2 flex items-center justify-between border-b cursor-pointer transition-colors ${
+            isPremium
+              ? 'bg-[#15151C] border-[#2A2A38] text-zinc-300 hover:bg-[#1A1A24]'
+              : 'bg-zinc-50 border-zinc-200 text-zinc-700 hover:bg-zinc-100'
+          }`}
+        >
+          <div className="flex items-center gap-2 truncate">
+            <div
+              className={`w-6 h-6 rounded-lg flex items-center justify-center shrink-0 ${
+                isPremium ? 'bg-[#D4AF37]/20 text-[#D4AF37]' : 'bg-rose-100 text-rose-600'
+              }`}
+            >
+              <MapPin className="w-3.5 h-3.5" />
+            </div>
+            <div className="flex items-baseline gap-1 truncate text-xs">
+              <span className="text-zinc-400 text-[11px]">Deliver to:</span>
+              <span
+                className={`font-bold truncate ${
+                  isPremium ? 'text-zinc-100' : 'text-zinc-900'
+                }`}
+              >
+                {selectedLocation.area}
+              </span>
+              <span className="text-[10px] font-mono text-zinc-400">
+                ({selectedLocation.pincode})
+              </span>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-1 text-[11px] font-bold text-rose-600 dark:text-[#D4AF37] shrink-0">
+            <span>Change</span>
+            <ChevronRight className="w-3 h-3" />
+          </div>
+        </div>
+
         {/* Mobile search bar with Live Suggestions */}
-        <div className="md:hidden px-4 pb-3 relative">
+        <div className="md:hidden px-4 py-2.5 relative">
           <form onSubmit={handleSearchSubmit} className="relative w-full">
             <input
               type="text"

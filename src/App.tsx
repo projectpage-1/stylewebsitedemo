@@ -4,6 +4,8 @@ import { AuthProvider } from './context/AuthContext';
 import { WishlistProvider } from './context/WishlistContext';
 import { CartProvider } from './context/CartContext';
 import { CheckoutProvider } from './context/CheckoutContext';
+import { LocationProvider } from './context/LocationContext';
+import { LiveLocationPickerModal } from './components/location/LiveLocationPickerModal';
 import { Header } from './components/layout/Header';
 import { Navbar } from './components/layout/Navbar';
 import { MobileNav } from './components/layout/MobileNav';
@@ -176,6 +178,9 @@ const AppContent: React.FC = () => {
       {!cleanPath.startsWith('/product/') && (
         <MobileNav onNavigate={navigate} activeRoute={cleanPath} />
       )}
+
+      {/* Global Live Location Picker Modal with Leaflet Map & GPS */}
+      <LiveLocationPickerModal />
     </div>
   );
 };
@@ -184,13 +189,15 @@ export default function App() {
   return (
     <StoreProvider>
       <AuthProvider>
-        <CartProvider>
-          <WishlistProvider>
-            <CheckoutProvider>
-              <AppContent />
-            </CheckoutProvider>
-          </WishlistProvider>
-        </CartProvider>
+        <LocationProvider>
+          <CartProvider>
+            <WishlistProvider>
+              <CheckoutProvider>
+                <AppContent />
+              </CheckoutProvider>
+            </WishlistProvider>
+          </CartProvider>
+        </LocationProvider>
       </AuthProvider>
     </StoreProvider>
   );

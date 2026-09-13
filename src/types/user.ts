@@ -25,10 +25,14 @@ export interface Address {
   street: string;
   addressLine1?: string;
   locality?: string;
+  houseNo?: string;
+  landmark?: string;
   city: string;
   state: string;
   pincode: string;
   postalCode?: string;
+  lat?: number;
+  lng?: number;
   type: 'home' | 'work' | 'other';
   isDefault: boolean;
 }
